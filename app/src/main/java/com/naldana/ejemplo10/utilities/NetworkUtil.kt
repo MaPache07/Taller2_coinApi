@@ -21,9 +21,9 @@ class NetworkUtil {
 
     @Throws(IOException::class)
     fun getResponseFromHttpUrl(url: URL): String {
-        val apiKey : String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NTQ4MjAyODMsImV4cCI6MTYxNzAyODI4M30.MDqFZP6iMjpYhDfQwMfkaee3He9tbBAYbksd-gLGhxY"
+        val apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NTQ4MjAyODMsImV4cCI6MTYxNzAyODI4M30.MDqFZP6iMjpYhDfQwMfkaee3He9tbBAYbksd-gLGhxY"
         val urlConnection = url.openConnection() as HttpURLConnection
-        urlConnection.setRequestProperty("Authorization", apiKey)
+        urlConnection.setRequestProperty("Authorization", "Bearer $apiKey")
         try {
             val `in` = urlConnection.inputStream
 
