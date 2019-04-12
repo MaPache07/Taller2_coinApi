@@ -23,11 +23,8 @@ class CoinAdapter(val coins:List<Coin>) : RecyclerView.Adapter<CoinAdapter.ViewH
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         fun bind(item: Coin) {
-            var uri = Uri.parse(item.img)
             with(itemView){
-                with(itemView){
-                    Glide.with(itemView).load(uri).into(img_coin)
-                }
+                Glide.with(itemView).load(item.img).placeholder(R.drawable.ic_launcher_background).into(itemView.img_coin)
             }
         }
     }
