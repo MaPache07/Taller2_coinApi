@@ -7,6 +7,7 @@ import android.support.design.widget.NavigationView
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -24,6 +25,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var twoPane =  false
     val coinLink:  String = "https://apicoins.herokuapp.com/coin"
+    var cList: ArrayList<Coin> = ArrayList()
+    var cListMap: MutableMap<String, Coin> = HashMap()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,11 +51,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    fun initRecycler(){
+         recyclerview.apply {
+             adapter = CoinAdapter(cList)
+             layoutManager = LinearLayoutManager(this@MainActivity)
+         }
+    }
+
     inner class FetchCoinTask : AsyncTask<String,Void,String>(){
         override fun doInBackground(vararg params: String?): String? {
             var coinApi = NetworkUtil().buildUrl(coinLink)
             var coinParser = JsonParser()
-
             var coinJson = NetworkUtil().getResponseFromHttpUrl(coinApi)
             coinJson = "[" + coinJson + "]"
             var theCoin: Coin
@@ -60,7 +69,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             for(listElement: JsonElement in listCoinArray){
                 var coinObject = listElement.asJsonObject
                 var coinArray = coinObject.getAsJsonArray("coins")
-                var i:Int = 0
                 for(coinElement: JsonElement in coinArray){
                     theCoin = Coin(coinElement.asJsonObject.get("name").asString,
                         coinElement.asJsonObject.get("country").asString,
@@ -69,15 +77,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         coinElement.asJsonObject.get("year").asInt,
                         coinElement.asJsonObject.get("isAvailable").asBoolean,
                         coinElement.asJsonObject.get("img").asString)
-                    Log.d("Pooh.se.la.come", coinElement.asJsonObject.get("_id").asString)
-                    CoinList.cList.add(theCoin)
-                    CoinList.cListMap.put(coinElement.asJsonObject.get("_id").asString, theCoin)
-                    i++
+                    cList.add(theCoin)
+                    cListMap.put(coinElement.asJsonObject.get("_id").asString, theCoin)
                 }
             }
-
             return null
         }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+            initRecycler()
+        }
+
     }
 
     override fun onBackPressed() {
@@ -129,10 +140,5 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         drawer_layout.closeDrawer(GravityCompat.START)
         return true
-    }
-
-    object CoinList{
-        var cList: ArrayList<Coin> = ArrayList()
-        var cListMap: MutableMap<String, Coin> = HashMap()
     }
 }
