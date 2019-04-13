@@ -67,8 +67,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     fun clickedCoin(coin: Coin){
+        var bundle = Bundle()
+        bundle.putString(AppConstants.NAME_KEY, coin.name)
+        bundle.putString(AppConstants.COUNTRY_KEY, coin.country)
+        bundle.putString(AppConstants.VALUE_KEY, coin.value.toString())
+        bundle.putString(AppConstants.VALUE_US_KEY, coin.values_us.toString())
+        bundle.putString(AppConstants.YEAR_KEY, coin.year.toString())
+        bundle.putString(AppConstants.IS_AVAILABLE_KEY, coin.isAvailable.toString())
+        bundle.putString(AppConstants.IMG_KEY, coin.img)
         var  mIntent = Intent(this, CoinActivity::class.java)
-        mIntent.putExtra(AppConstants.COIN_KEY, coin.toString())
+        mIntent.putExtras(bundle)
         startActivity(mIntent)
     }
 
@@ -87,7 +95,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     theCoin = Coin(coinElement.asJsonObject.get("name").asString,
                         coinElement.asJsonObject.get("country").asString,
                         coinElement.asJsonObject.get("value").asInt,
-                        coinElement.asJsonObject.get("value_us").asInt,
+                        coinElement.asJsonObject.get("value_us").asDouble,
                         coinElement.asJsonObject.get("year").asInt,
                         coinElement.asJsonObject.get("isAvailable").asBoolean,
                         coinElement.asJsonObject.get("img").asString)
