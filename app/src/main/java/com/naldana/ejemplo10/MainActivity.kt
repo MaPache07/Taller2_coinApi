@@ -1,5 +1,6 @@
 package com.naldana.ejemplo10
 
+import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -7,19 +8,18 @@ import android.support.design.widget.NavigationView
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.naldana.ejemplo10.models.Coin
+import com.naldana.ejemplo10.utilities.AppConstants
 import com.naldana.ejemplo10.utilities.NetworkUtil
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import java.net.URL
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -52,10 +52,24 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     fun initRecycler(){
+        var viewManager = LinearLayoutManager(this)
+        if(this.resources.configuration.orientation == 2 || this.resources.configuration.orientation == 4){
+            viewManager = LinearLayoutManager(this)
+        }
+        else{
+            viewManager = GridLayoutManager(this, 2)
+        }
+        var coinAdapter = CoinAdapter(cList, {coin: Coin -> clickedCoin(coin)})
          recyclerview.apply {
-             adapter = CoinAdapter(cList)
-             layoutManager = LinearLayoutManager(this@MainActivity)
+             adapter = coinAdapter
+             layoutManager = viewManager
          }
+    }
+
+    fun clickedCoin(coin: Coin){
+        var  mIntent = Intent(this, CoinActivity::class.java)
+        mIntent.putExtra(AppConstants.COIN_KEY, coin.toString())
+        startActivity(mIntent)
     }
 
     inner class FetchCoinTask : AsyncTask<String,Void,String>(){

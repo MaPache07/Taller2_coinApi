@@ -1,6 +1,5 @@
 package com.naldana.ejemplo10
 
-import android.net.Uri
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -9,7 +8,7 @@ import com.bumptech.glide.Glide
 import com.naldana.ejemplo10.models.Coin
 import kotlinx.android.synthetic.main.list_item_coin.view.*
 
-class CoinAdapter(val coins:List<Coin>) : RecyclerView.Adapter<CoinAdapter.ViewHolder>(){
+class CoinAdapter(val coins:List<Coin>, val clickedCoinListener: (Coin) -> Unit) : RecyclerView.Adapter<CoinAdapter.ViewHolder>(){
     override fun onCreateViewHolder(parent: ViewGroup, p1: Int): CoinAdapter.ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.list_item_coin, null, false)
         return ViewHolder(view)
@@ -21,10 +20,14 @@ class CoinAdapter(val coins:List<Coin>) : RecyclerView.Adapter<CoinAdapter.ViewH
         holder.bind(coins[position])
     }
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         fun bind(item: Coin) {
+            itemView.text_coin.text = item.name
             with(itemView){
                 Glide.with(itemView).load(item.img).placeholder(R.drawable.ic_launcher_background).into(itemView.img_coin)
+            }
+            itemView.setOnClickListener{
+                clickedCoinListener(item)
             }
         }
     }
