@@ -1,3 +1,10 @@
 package com.naldana.ejemplo10.models
 
-data class Coin (var name: String="Pedro coin", var country: String="", var value: Int=0, var values_us: Double = 0.0, var year: Int=0, var isAvailable: Boolean=false, var img: String="")
+data class Coin (var _id:String,
+                 var name: String,
+                 var country: String,
+                 var value: Int,
+                 var values_us: Double,
+                 var year: Int,
+                 var isAvailable: Boolean,
+                 var img: String)

@@ -1,5 +1,6 @@
 package com.naldana.ejemplo10
 
+import android.content.ContentValues
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
@@ -14,6 +15,8 @@ import android.view.Menu
 import android.view.MenuItem
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import com.naldana.ejemplo10.data.Database
+import com.naldana.ejemplo10.data.DatabaseContract
 import com.naldana.ejemplo10.models.Coin
 import com.naldana.ejemplo10.utilities.AppConstants
 import com.naldana.ejemplo10.utilities.NetworkUtil
@@ -27,6 +30,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     val coinLink:  String = "https://apicoins.herokuapp.com/coin"
     var cList: ArrayList<Coin> = ArrayList()
     var cListMap: MutableMap<String, Coin> = HashMap()
+    var dbHelper = Database(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +70,33 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
          }
     }
 
+    fun inToBase(){
+        val db = dbHelper.writableDatabase
+        for(coin: Coin in cList){
+            val values = ContentValues().apply {
+                put(DatabaseContract.CoinEntry.COLUMN_NAME, coin.name)
+                put(DatabaseContract.CoinEntry.COLUMN_COUNTRY, coin.country)
+                put(DatabaseContract.CoinEntry.COLUMN_VALUE, coin.value)
+                put(DatabaseContract.CoinEntry.COLUMN_VALUE_US, coin.values_us)
+                put(DatabaseContract.CoinEntry.COLUMN_YEAR, coin.year)
+                put(DatabaseContract.CoinEntry.COLUMN_VALUE, coin.value)
+                put(DatabaseContract.CoinEntry.COLUMN_ISAVAILABLE, coin.isAvailable)
+                put(DatabaseContract.CoinEntry.COLUMN_IMG, coin.img)
+            }
+
+            val newRowId = db?.insert(DatabaseContract.CoinEntry.TABLE_NAME, null, values)
+
+            if (newRowId == -1L) {
+                Snackbar.make(it, getString(R.string.alert_person_not_saved), Snackbar.LENGTH_SHORT).show()
+            } else {
+                Snackbar.make(it, getString(R.string.alert_person_saved_success) + newRowId, Snackbar.LENGTH_SHORT)
+                    .show()
+                mAdapter.setPersonas(readPersonas())
+            }
+        }
+        initRecycler()
+    }
+
     fun clickedCoin(coin: Coin){
         var bundle = Bundle()
         bundle.putString(AppConstants.NAME_KEY, coin.name)
@@ -92,7 +123,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 var coinObject = listElement.asJsonObject
                 var coinArray = coinObject.getAsJsonArray("coins")
                 for(coinElement: JsonElement in coinArray){
-                    theCoin = Coin(coinElement.asJsonObject.get("name").asString,
+                    theCoin = Coin(coinElement.asJsonObject.get("_id").asString,
+                        coinElement.asJsonObject.get("name").asString,
                         coinElement.asJsonObject.get("country").asString,
                         coinElement.asJsonObject.get("value").asInt,
                         coinElement.asJsonObject.get("value_us").asDouble,
@@ -108,7 +140,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
-            initRecycler()
+            inToBase()
         }
 
     }
@@ -162,5 +194,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         drawer_layout.closeDrawer(GravityCompat.START)
         return true
+    }
+
+    override fun onDestroy() {
+        dbHelper.close()
+        super.onDestroy()
     }
 }
