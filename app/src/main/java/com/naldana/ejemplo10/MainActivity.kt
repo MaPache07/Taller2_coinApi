@@ -2,6 +2,7 @@ package com.naldana.ejemplo10
 
 import android.content.ContentValues
 import android.content.Intent
+import android.database.DatabaseUtils
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -13,11 +14,11 @@ import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.LinearLayoutManager
 import android.view.Menu
 import android.view.MenuItem
-import com.google.gson.JsonElement
-import com.google.gson.JsonParser
+import com.google.gson.Gson
 import com.naldana.ejemplo10.data.Database
 import com.naldana.ejemplo10.data.DatabaseContract
 import com.naldana.ejemplo10.models.Coin
+import com.naldana.ejemplo10.models.CoinList
 import com.naldana.ejemplo10.utilities.AppConstants
 import com.naldana.ejemplo10.utilities.NetworkUtil
 import kotlinx.android.synthetic.main.activity_main.*
@@ -28,8 +29,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var twoPane =  false
     val coinLink:  String = "https://apicoins.herokuapp.com/coin"
-    var cList: ArrayList<Coin> = ArrayList()
-    var cListMap: MutableMap<String, Coin> = HashMap()
+    lateinit var coinList : CoinList
     var dbHelper = Database(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,38 +63,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         else{
             viewManager = GridLayoutManager(this, 2)
         }
-        var coinAdapter = CoinAdapter(cList, {coin: Coin -> clickedCoin(coin)})
+        var coinAdapter = CoinAdapter(coinList.coins, {coin: Coin -> clickedCoin(coin)})
          recyclerview.apply {
              adapter = coinAdapter
              layoutManager = viewManager
          }
-    }
-
-    fun inToBase(){
-        val db = dbHelper.writableDatabase
-        for(coin: Coin in cList){
-            val values = ContentValues().apply {
-                put(DatabaseContract.CoinEntry.COLUMN_NAME, coin.name)
-                put(DatabaseContract.CoinEntry.COLUMN_COUNTRY, coin.country)
-                put(DatabaseContract.CoinEntry.COLUMN_VALUE, coin.value)
-                put(DatabaseContract.CoinEntry.COLUMN_VALUE_US, coin.values_us)
-                put(DatabaseContract.CoinEntry.COLUMN_YEAR, coin.year)
-                put(DatabaseContract.CoinEntry.COLUMN_VALUE, coin.value)
-                put(DatabaseContract.CoinEntry.COLUMN_ISAVAILABLE, coin.isAvailable)
-                put(DatabaseContract.CoinEntry.COLUMN_IMG, coin.img)
-            }
-
-            val newRowId = db?.insert(DatabaseContract.CoinEntry.TABLE_NAME, null, values)
-
-            if (newRowId == -1L) {
-                Snackbar.make(it, getString(R.string.alert_person_not_saved), Snackbar.LENGTH_SHORT).show()
-            } else {
-                Snackbar.make(it, getString(R.string.alert_person_saved_success) + newRowId, Snackbar.LENGTH_SHORT)
-                    .show()
-                mAdapter.setPersonas(readPersonas())
-            }
-        }
-        initRecycler()
     }
 
     fun clickedCoin(coin: Coin){
@@ -113,26 +86,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     inner class FetchCoinTask : AsyncTask<String,Void,String>(){
         override fun doInBackground(vararg params: String?): String? {
+            val db = dbHelper.writableDatabase
             var coinApi = NetworkUtil().buildUrl(coinLink)
-            var coinParser = JsonParser()
-            var coinJson = NetworkUtil().getResponseFromHttpUrl(coinApi)
-            coinJson = "[" + coinJson + "]"
-            var theCoin: Coin
-            var listCoinArray = coinParser.parse(coinJson).asJsonArray
-            for(listElement: JsonElement in listCoinArray){
-                var coinObject = listElement.asJsonObject
-                var coinArray = coinObject.getAsJsonArray("coins")
-                for(coinElement: JsonElement in coinArray){
-                    theCoin = Coin(coinElement.asJsonObject.get("_id").asString,
-                        coinElement.asJsonObject.get("name").asString,
-                        coinElement.asJsonObject.get("country").asString,
-                        coinElement.asJsonObject.get("value").asInt,
-                        coinElement.asJsonObject.get("value_us").asDouble,
-                        coinElement.asJsonObject.get("year").asInt,
-                        coinElement.asJsonObject.get("isAvailable").asBoolean,
-                        coinElement.asJsonObject.get("img").asString)
-                    cList.add(theCoin)
-                    cListMap.put(coinElement.asJsonObject.get("_id").asString, theCoin)
+            var listCoin = NetworkUtil().getResponseFromHttpUrl(coinApi)
+            coinList = Gson().fromJson(listCoin, CoinList::class.java)
+            if(DatabaseUtils.queryNumEntries(db, "coin").toInt() != coinList.coins.size){
+                db.delete("coin", null, null)
+                for(coin: Coin in coinList.coins){
+                    val values = ContentValues().apply {
+                        put(DatabaseContract.CoinEntry.COLUMN_NAME, coin.name)
+                        put(DatabaseContract.CoinEntry.COLUMN_COUNTRY, coin.country)
+                        put(DatabaseContract.CoinEntry.COLUMN_VALUE, coin.value)
+                        put(DatabaseContract.CoinEntry.COLUMN_VALUE_US, coin.values_us)
+                        put(DatabaseContract.CoinEntry.COLUMN_YEAR, coin.year)
+                        put(DatabaseContract.CoinEntry.COLUMN_VALUE, coin.value)
+                        put(DatabaseContract.CoinEntry.COLUMN_ISAVAILABLE, coin.isAvailable)
+                        put(DatabaseContract.CoinEntry.COLUMN_IMG, coin.img)
+                    }
                 }
             }
             return null
@@ -140,7 +110,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
-            inToBase()
+            initRecycler()
         }
 
     }
@@ -154,15 +124,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
             R.id.action_settings -> return true
             else -> return super.onOptionsItemSelected(item)

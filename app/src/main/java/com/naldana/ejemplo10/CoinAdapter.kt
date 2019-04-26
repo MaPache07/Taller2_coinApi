@@ -9,6 +9,7 @@ import com.naldana.ejemplo10.models.Coin
 import kotlinx.android.synthetic.main.list_item_coin.view.*
 
 class CoinAdapter(val coins:List<Coin>, val clickedCoinListener: (Coin) -> Unit) : RecyclerView.Adapter<CoinAdapter.ViewHolder>(){
+
     override fun onCreateViewHolder(parent: ViewGroup, p1: Int): CoinAdapter.ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.list_item_coin, null, false)
         return ViewHolder(view)
